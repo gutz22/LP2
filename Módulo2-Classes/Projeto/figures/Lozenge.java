@@ -12,7 +12,7 @@ public class Lozenge extends Figure {
         this.corContorno = corContorno;
     }
     
-    public void paint (Graphics g) {
+    public void paint(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         GeneralPath shape = new GeneralPath();
         shape.moveTo(this.x+(this.w)/2, this.y);

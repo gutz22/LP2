@@ -10,9 +10,9 @@ public abstract class Figure implements IVisible {
     public int w, h;
     public Color corContorno, corFundo;
     
-    public abstract void paint (Graphics g);
+    public abstract void paint(Graphics g);
 
-    public Figure (int x, int y, int w, int h, Color corFundo) {
+    public Figure(int x, int y, int w, int h, Color corFundo) {
       this.x = x;
       this.y = y;
       this.w = w;
@@ -27,9 +27,9 @@ public abstract class Figure implements IVisible {
     public void changeOutlineColor(Color corContorno) {
       this.corContorno = corContorno;
   }
-    public void drawBorder(Graphics g) {
+    public void drawBorder(Graphics g, Color corBorda) {
       Graphics2D g2d = (Graphics2D) g;
-      g2d.setColor(Color.red);
+      g2d.setColor(corBorda);
       g2d.drawRect(this.x,this.y, this.w,this.h);
     }
 
@@ -42,11 +42,11 @@ public abstract class Figure implements IVisible {
       g2d.fillRect(this.x+this.w-7,this.y+this.h-7, 7,7);
     }
 
-    public boolean clicked (int posX, int posY) {
+    public boolean clicked(int posX, int posY) {
       return (((this.x <= posX) && (this.y <= posY)) && ((posX <= (this.x + this.w)) && (posY <= (this.y + this.h))));
     }
 
-    public boolean redimClicked (int posX, int posY) {
+    public boolean redimClicked(int posX, int posY) {
       return ((((this.x+this.w-7) <= posX) && ((this.y+this.h-7) <= posY)) && ((posX <= (this.x+this.w-7 + 7)) && (posY <= (this.y+this.h-7 + 7))));
     }
 

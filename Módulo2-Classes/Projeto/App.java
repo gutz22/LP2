@@ -1,37 +1,39 @@
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.event.*;
+
 import javax.swing.*;
 
 import java.util.ArrayList;
 import java.util.Random;
 import java.awt.*;
-import java.awt.geom.*;
 
 import figures.*;
 
 class App {
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         ListFrame frame = new ListFrame();
         frame.setVisible(true);
     }
 }   
-// Para a para mudança de cor nas figuras, pressione 'c' para troca de contorno e 'f' para troca de fundo, com as teclas de 0 a 8 representando uma cor específica."
+// Para a para mudança de cor nas figuras, pressione 'c' para troca de contorno e 'f' para troca de fundo, com as teclas de 0 a 8 representando uma cor específica. Pressione qualquer tecla para interromper a criação de figuras com o clique."
 class ListFrame extends JFrame {
     ArrayList<Figure> figs = new ArrayList<Figure>();
+    ArrayList<Figure> sel = new ArrayList<Figure>();
+    
     Figure focus = null;
+    Figure nextPaint = null;
+    int nextPaintIndex = -1;
+    int call = 0;
     Point pos = null;
     
-    Rect border = null; Rect borderl = null;
     boolean redimClick = false;
     int dx, dy;
     int dxR,dyR;
     int redimX, redimY;
+    int fundo, contorno;
     boolean changeOutline = false; boolean changeBackground = false;
-
     Random rand = new Random();
-
     
     Color aqua = new Color(0, 255, 255);
     Color crimson = new Color(220, 0, 60);  
@@ -43,13 +45,18 @@ class ListFrame extends JFrame {
     Color silver = new Color(192, 192, 192);
     Color saddleBrown = new Color(139, 69, 19);
     Color cor[] = { aqua, crimson, gold, purple, forestGreen,
-                    plum, darkOrange, silver, saddleBrown };
+                    plum, darkOrange, silver, saddleBrown, Color.black };
     
-   
     ListFrame () {
+        this.setTitle("Projeto parte 2 - Utilizar as teclas '0' à '8' para mudança de cor, com 'c' para troca de contorno e 'f' para troca de fundo. Pressionar qualquer tecla para interromper a criação de figuras com o clique");
+        this.setSize(350, 350);
+        setLocationRelativeTo(null);
+        contorno = rand.nextInt(9);
+        fundo = rand.nextInt(9);
+
         this.addWindowListener (
             new WindowAdapter() {
-                public void windowClosing (WindowEvent e) {
+                public void windowClosing(WindowEvent e) {
                     System.exit(0);
                 }
             }
@@ -57,11 +64,12 @@ class ListFrame extends JFrame {
         
         this.addMouseListener(
             new MouseAdapter() {
-                public void mousePressed (MouseEvent me) {
+                public void mousePressed(MouseEvent me) {
                     pos = getMousePosition();
                     focus = null;
                     redimClick = false;
                     boolean insideFocus = false;
+                    boolean insideSel = false;
                     for (Figure fig: figs) {
                         if (fig.clicked(pos.x, pos.y)) {
                             focus = fig;
@@ -80,7 +88,38 @@ class ListFrame extends JFrame {
                             break;
                         }
                     }  
-                    if (!insideFocus) {
+                    
+                    for (Figure s: sel) {
+                        if (s.clicked(pos.x, pos.y)) {
+                            nextPaintIndex = sel.indexOf(s);
+                            nextPaint = s;
+                            insideSel = true;
+                            break;
+                        }
+                    }
+                    if ((!insideFocus) && (nextPaint != null) && (!insideSel)) {
+                        focus = null;
+                        int w = rand.nextInt(30) + 20;
+                        int h = rand.nextInt(30) + 20;
+            
+                        if (nextPaintIndex == 0) {
+                            figs.add(new LineSegment(pos.x,pos.y, w,h,cor[fundo]));
+                            focus = figs.get(figs.size()-1);
+                        }
+                        else if (nextPaintIndex == 1) {
+                            figs.add(new Lozenge(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            focus = figs.get(figs.size()-1);
+                        }
+                        else if (nextPaintIndex == 2) {
+                            figs.add(new Ellipse(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            focus = figs.get(figs.size()-1);
+                        }
+                        else if (nextPaintIndex == 3) {
+                            figs.add(new Rect(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            focus = figs.get(figs.size()-1);
+                        }
+                    }
+                    else if ((!insideFocus) && (nextPaint == null)) {
                         focus = null;
                     }
                     repaint();
@@ -90,7 +129,7 @@ class ListFrame extends JFrame {
 
         this.addMouseMotionListener(
             new MouseMotionAdapter() {
-                public void mouseDragged (MouseEvent me) {
+                public void mouseDragged(MouseEvent me) {
                     pos = getMousePosition();
                     int stretchx; int stretchy;
                     if (redimClick) {
@@ -117,16 +156,15 @@ class ListFrame extends JFrame {
 
         this.addKeyListener (
             new KeyAdapter() {
-                public void keyPressed (KeyEvent ke) {
+                public void keyPressed(KeyEvent ke) {
                     pos = getMousePosition();
+                    nextPaintIndex = -1;
+                    nextPaint = null;
                     int xa = pos.x;
                     int ya = pos.y;
                     int w = rand.nextInt(30) + 20;
                     int h = rand.nextInt(30) + 20;
             
-                    int contorno = rand.nextInt(9);
-                    int fundo = rand.nextInt(9);
-                    
                     if (ke.getKeyChar() == 'r') {
                         figs.add(new Rect(xa,ya, w,h, cor[contorno],cor[fundo]));
                         focus = figs.get(figs.size()-1);
@@ -156,82 +194,60 @@ class ListFrame extends JFrame {
                         focus = null;
                     }
 
-                    if ((focus != null) && (changeBackground)) {
-                        if (ke.getKeyChar() == '0') {
-                            focus.changeBackgroundColor(cor[0]);
+                    if (changeBackground) {
+                        int f = ke.getKeyChar() - '0';
+                        if (focus != null) {
+                            focus.changeBackgroundColor(cor[f]);
+                            sel.get(nextPaintIndex).changeBackgroundColor(cor[f]);
                         }
-                        else if (ke.getKeyChar() == '1') {
-                            focus.changeBackgroundColor(cor[1]);
-                        }
-                        else if (ke.getKeyChar() == '2') {
-                            focus.changeBackgroundColor(cor[2]);
-                        }
-                        else if (ke.getKeyChar() == '3') {
-                            focus.changeBackgroundColor(cor[3]);
-                        }
-                        else if (ke.getKeyChar() == '4') {
-                            focus.changeBackgroundColor(cor[4]);
-                        }
-                        else if (ke.getKeyChar() == '5') {
-                            focus.changeBackgroundColor(cor[5]);
-                        }
-                        else if (ke.getKeyChar() == '6') {
-                            focus.changeBackgroundColor(cor[6]);
-                        }
-                        else if (ke.getKeyChar() == '7') {
-                            focus.changeBackgroundColor(cor[7]);
-                        }
-                        else if (ke.getKeyChar() == '8') {
-                            focus.changeBackgroundColor(cor[8]);
+                        else {
+                            sel.get(nextPaintIndex).changeBackgroundColor(cor[f]);
                         }
                     }
 
-                    else if ((focus != null) && (changeOutline)) {
-                        if (ke.getKeyChar() == '0') {
-                            focus.changeOutlineColor(cor[0]);
+                    else if (changeOutline) {
+                        int c = ke.getKeyChar() - '0';
+                        if (focus != null) {
+                            focus.changeOutlineColor(cor[c]);
                         }
-                        else if (ke.getKeyChar() == '1') {
-                            focus.changeOutlineColor(cor[1]);
-                        }
-                        else if (ke.getKeyChar() == '2') {
-                            focus.changeOutlineColor(cor[2]);
-                        }
-                        else if (ke.getKeyChar() == '3') {
-                            focus.changeOutlineColor(cor[3]);
-                        }
-                        else if (ke.getKeyChar() == '4') {
-                            focus.changeOutlineColor(cor[4]);
-                        }
-                        else if (ke.getKeyChar() == '5') {
-                            focus.changeOutlineColor(cor[5]);
-                        }
-                        else if (ke.getKeyChar() == '6') {
-                            focus.changeOutlineColor(cor[6]);
-                        }
-                        else if (ke.getKeyChar() == '7') {
-                            focus.changeOutlineColor(cor[7]);
-                        }
-                        else if (ke.getKeyChar() == '8') {
-                            focus.changeOutlineColor(cor[8]);
+                        else if (nextPaint != null) {
+                            nextPaint.changeOutlineColor(cor[c]);
                         }
                     }
                     repaint();
                 }
             }
         );
-        this.setTitle("Projeto parte 1 - Utilizar as teclas '0' à '8' para mudança de cor, com 'c' para troca de contorno e 'f' para troca de fundo");
-        this.setSize(350, 350);
-        setLocationRelativeTo(null);
     }
-
-    public void paint (Graphics g) {
+    public void init_sel() {
+        sel.clear();
+        sel.add(new LineSegment(320,318, 30,30, cor[fundo]));
+        sel.add(new Lozenge(290,318, 30,30, cor[contorno],cor[fundo]));
+        sel.add(new Ellipse(260,318, 30,30, cor[contorno], cor[fundo]));
+        sel.add(new Rect(228,320, 30,26, cor[contorno], cor[fundo]));
+        repaint();
+    }
+    public void paint(Graphics g) {
         super.paint(g);
         for (Figure fig: this.figs) {
             fig.paint(g);
         }   
         if (focus != null) {
-            focus.drawBorder(g);
+            focus.drawBorder(g, Color.red);
             focus.drawRedim(g);
         }
+        if (call < 100){
+            init_sel();
+        }
+        for (Figure s: this.sel) {
+            s.paint(g);
+            if (nextPaint == s) {
+                s.drawBorder(g, Color.magenta);
+            }
+            else {
+               s.drawBorder(g, Color.black);
+            }   
+        }
+        call+=1;
     }
 }
