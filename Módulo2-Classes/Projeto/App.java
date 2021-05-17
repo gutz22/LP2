@@ -22,13 +22,12 @@ class ListFrame extends JFrame {
     ArrayList<Figure> figs = new ArrayList<Figure>();
     Figure focus = null;
     Point pos = null;
-    Color lightSalmon = new Color(255, 160, 122);
-    Rect redim = new Rect(0, 0, 7, 7, Color.black, lightSalmon);
-    Rect rediml = new Rect(0, 0, 7, 7, Color.black, lightSalmon);
+    
     Rect border = null; Rect borderl = null;
     boolean redimClick = false;
-    boolean isLozenge = false;
     int dx, dy;
+    int dxR,dyR;
+    int redimX, redimY;
     boolean changeOutline = false; boolean changeBackground = false;
 
     Random rand = new Random();
@@ -61,49 +60,27 @@ class ListFrame extends JFrame {
                 public void mousePressed (MouseEvent me) {
                     pos = getMousePosition();
                     focus = null;
-                    boolean insideFocus = true;
-                    isLozenge = false;
-                    if (insideFocus) {
-                        insideFocus = false;
-                        for (Figure fig: figs) {
-                            if (fig.getClass().getSimpleName().equals("Lozenge")) {
-                                if (((fig.x-9 <= pos.x) && (fig.y-9 <= pos.y)) && 
-                                    ((pos.x < (fig.x-9 + fig.w+18)) && (pos.y < (fig.y-9 + fig.h+18)))) {
-                                    focus = fig;
-                                    insideFocus = true;
-                                    redimClick = false;
-                                    figs.remove(focus);
-                                    figs.add(focus);
-                                    dx = focus.x-9 - pos.x;
-                                    dy = focus.y-9 - pos.y;
-                                    break;
-                                }
+                    redimClick = false;
+                    boolean insideFocus = false;
+                    for (Figure fig: figs) {
+                        if (fig.clicked(pos.x, pos.y)) {
+                            focus = fig;
+                            insideFocus = true;
+                            figs.remove(focus);
+                            figs.add(focus);
+                            dx = focus.x - pos.x;
+                            dy = focus.y - pos.y;
+                            if (focus.redimClicked(pos.x, pos.y)) {
+                                redimClick = true;
+                                redimX = focus.x + focus.w - 7;
+                                redimY = focus.y + focus.h - 7;
+                                dxR = redimX - pos.x;
+                                dyR = redimY - pos.y;
                             }
-                            else if ( ((fig.x <= pos.x) && (fig.y <= pos.y)) && ((pos.x <= (fig.x + fig.w)) && (pos.y <= (fig.y + fig.h ))) ) {
-                                focus = fig;
-                                insideFocus = true;
-                                redimClick = false;
-                                figs.remove(focus);
-                                figs.add(focus);
-                                dx = focus.x - pos.x;
-                                dy = focus.y - pos.y;
-                                break;
-                            }
-                            repaint();
-                        }  
-                    }    
-                    if ( (insideFocus) && ( ((redim.x <= pos.x) && (redim.y <= pos.y)) && ((pos.x <= (redim.x + redim.w)) && (pos.y  <= (redim.y + redim.h)))) ) {
-                        redimClick = true;
-                        dx = redim.x - pos.x;
-                        dy = redim.y - pos.y;
-                    }
-                    if ( (insideFocus) && ( ((rediml.x <= pos.x) && (rediml.y <= pos.y)) && ((pos.x <= (rediml.x + rediml.w)) && (pos.y  <= (rediml.y + rediml.h)))) ) {
-                        redimClick = true;
-                        isLozenge = true;
-                        dx = rediml.x - pos.x;
-                        dy = rediml.y - pos.y;
-                    }
-                    if (!(insideFocus)) {
+                            break;
+                        }
+                    }  
+                    if (!insideFocus) {
                         focus = null;
                     }
                     repaint();
@@ -117,30 +94,23 @@ class ListFrame extends JFrame {
                     pos = getMousePosition();
                     int stretchx; int stretchy;
                     if (redimClick) {
-                        if (isLozenge) {
-                            stretchx = rediml.x - pos.x;
-                            stretchy = rediml.y - pos.y;
-                            figs.remove(focus);
-                            figs.add(focus);
-                            focus.w += dx - stretchx;
-                            focus.h += dx - stretchy;
-                        }
-                        else {
-                            stretchx = redim.x - pos.x;
-                            stretchy = redim.y - pos.y;
-                            figs.remove(focus);
-                            figs.add(focus);
-                            focus.w += dx - stretchx;
-                            focus.h += dy - stretchy;
-                        }
+                        figs.remove(focus);
+                        figs.add(focus);
+                        stretchx = redimX - pos.x;
+                        stretchy = redimY - pos.y;
+                        focus.w += dxR - stretchx;
+                        focus.h += dyR - stretchy;
+                        dxR = stretchx;
+                        dyR = stretchy;
                     }
                     else if (focus != null) {
+                        redimClick = false;
                         figs.remove(focus);
                         figs.add(focus);
                         focus.x = pos.x + dx;
                         focus.y = pos.y + dy;
                     }
-                   repaint();
+                repaint();
                 }
             }
         );
@@ -166,7 +136,7 @@ class ListFrame extends JFrame {
                         focus = figs.get(figs.size()-1);
                     } 
                     else if (ke.getKeyChar() == 'l') {
-                        figs.add(new Lozenge(xa,ya, w, w, cor[contorno],cor[fundo]));
+                        figs.add(new Lozenge(xa,ya, w, h, cor[contorno],cor[fundo]));
                         focus = figs.get(figs.size()-1);
                     }
                     else if (ke.getKeyChar() == 's') {
@@ -260,23 +230,8 @@ class ListFrame extends JFrame {
             fig.paint(g);
         }   
         if (focus != null) {
-            if (focus.getClass().getSimpleName().equals("Lozenge")) {
-                Graphics2D g2d = (Graphics2D) g;
-                borderl = new Rect(focus.x-9,focus.y-9, focus.w+18,focus.h+18, Color.red);
-                borderl.drawLozenge(g);
-                
-                rediml.x = borderl.x + borderl.w-6;
-                rediml.y = borderl.y + borderl.h-6;
-                rediml.paint(g);
-            }
-            else {
-                border = new Rect(focus.x-2,focus.y-2, focus.w+4,focus.h+4, Color.red);
-                border.draw(g);
-                redim.x = border.x + border.w - 8;
-                redim.y = border.y + border.h - 8;
-            
-                redim.paint(g);
-            }
+            focus.drawBorder(g);
+            focus.drawRedim(g);
         }
     }
 }

@@ -9,16 +9,12 @@ import java.awt.geom.*;
 public class LineSegment extends Figure {
 
     public LineSegment (int x,int y, int w,int h, Color corFundo) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.corFundo = corFundo;
+        super(x,y, w,h, corFundo);
     }
 
     public void paint (Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setColor(this.corFundo);
-        g2d.drawLine(x, y, x+w, y+h);
+        g2d.drawLine(this.x, this.y, this.x+this.w,this.y+this.h);
     }
 }
