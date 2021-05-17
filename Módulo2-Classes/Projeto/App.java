@@ -1,6 +1,7 @@
 import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.event.*;
+import java.io.*;
 
 import javax.swing.*;
 
@@ -16,10 +17,11 @@ class App {
         frame.setVisible(true);
     }
 }   
-// Para a para mudança de cor nas figuras, pressione 'c' para troca de contorno e 'f' para troca de fundo, com as teclas de 0 a 8 representando uma cor específica. Pressione qualquer tecla para interromper a criação de figuras com o clique."
+// Para a para mudança de cor nas figuras, pressione 'c' para troca de contorno e 'f' para troca de fundo, com as teclas de 0 a 9 representando uma cor específica. Pressione as teclas 'r', 'e', 'l' ou 's' para interromper a criação de figuras com o clique."
 class ListFrame extends JFrame {
     ArrayList<Figure> figs = new ArrayList<Figure>();
     ArrayList<Figure> sel = new ArrayList<Figure>();
+    boolean selIsNotInicialized = true;
     
     Figure focus = null;
     Figure nextPaint = null;
@@ -31,10 +33,11 @@ class ListFrame extends JFrame {
     int dx, dy;
     int dxR,dyR;
     int redimX, redimY;
-    int fundo, contorno;
     boolean changeOutline = false; boolean changeBackground = false;
+    int f, c; 
     Random rand = new Random();
-    
+    int fundo = rand.nextInt(9), contorno = rand.nextInt(9); 
+
     Color aqua = new Color(0, 255, 255);
     Color crimson = new Color(220, 0, 60);  
     Color gold = new Color(255, 215, 0);
@@ -47,21 +50,36 @@ class ListFrame extends JFrame {
     Color cor[] = { aqua, crimson, gold, purple, forestGreen,
                     plum, darkOrange, silver, saddleBrown, Color.black };
     
-    ListFrame () {
-        this.setTitle("Projeto parte 2 - Utilizar as teclas '0' à '8' para mudança de cor, com 'c' para troca de contorno e 'f' para troca de fundo. Pressionar qualquer tecla para interromper a criação de figuras com o clique");
+    ListFrame() {
+        this.setTitle("Projeto parte 2 - Utilizar as teclas '0' à '9' para mudança de cor, com 'c' para troca de contorno e 'f' para troca de fundo. Pressionar teclas 'r', 'e', 'l' ou 's' para interromper a criação de figuras com o clique.");
         this.setSize(350, 350);
         setLocationRelativeTo(null);
-        contorno = rand.nextInt(9);
-        fundo = rand.nextInt(9);
+        
+        try {
+            FileInputStream f = new FileInputStream("proj.bin");
+            ObjectInputStream o = new ObjectInputStream(f);
+            this.figs = (ArrayList<Figure>) o.readObject();
+            o.close();
+        } catch (Exception x) {
+            System.out.println("Erro");
+        }
 
         this.addWindowListener (
             new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
+                    try {
+                        FileOutputStream f = new FileOutputStream("proj.bin");
+                        ObjectOutputStream o = new ObjectOutputStream(f);
+                        o.writeObject(figs);
+                        o.flush();
+                        o.close();
+                    } catch (Exception x) {
+                    }
                     System.exit(0);
                 }
             }
         );
-        
+      
         this.addMouseListener(
             new MouseAdapter() {
                 public void mousePressed(MouseEvent me) {
@@ -88,7 +106,6 @@ class ListFrame extends JFrame {
                             break;
                         }
                     }  
-                    
                     for (Figure s: sel) {
                         if (s.clicked(pos.x, pos.y)) {
                             nextPaintIndex = sel.indexOf(s);
@@ -101,21 +118,21 @@ class ListFrame extends JFrame {
                         focus = null;
                         int w = rand.nextInt(30) + 20;
                         int h = rand.nextInt(30) + 20;
-            
+
                         if (nextPaintIndex == 0) {
-                            figs.add(new LineSegment(pos.x,pos.y, w,h,cor[fundo]));
+                            figs.add(new LineSegment(pos.x,pos.y, w,h, nextPaint.corFundo));
                             focus = figs.get(figs.size()-1);
                         }
                         else if (nextPaintIndex == 1) {
-                            figs.add(new Lozenge(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            figs.add(new Lozenge(pos.x,pos.y, w,h, nextPaint.corContorno,nextPaint.corFundo));
                             focus = figs.get(figs.size()-1);
                         }
                         else if (nextPaintIndex == 2) {
-                            figs.add(new Ellipse(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            figs.add(new Ellipse(pos.x,pos.y, w,h, nextPaint.corContorno,nextPaint.corFundo));
                             focus = figs.get(figs.size()-1);
                         }
                         else if (nextPaintIndex == 3) {
-                            figs.add(new Rect(pos.x,pos.y, w,h, cor[contorno], cor[fundo]));
+                            figs.add(new Rect(pos.x,pos.y, w,h, nextPaint.corContorno,nextPaint.corFundo));
                             focus = figs.get(figs.size()-1);
                         }
                     }
@@ -158,27 +175,33 @@ class ListFrame extends JFrame {
             new KeyAdapter() {
                 public void keyPressed(KeyEvent ke) {
                     pos = getMousePosition();
-                    nextPaintIndex = -1;
-                    nextPaint = null;
                     int xa = pos.x;
                     int ya = pos.y;
                     int w = rand.nextInt(30) + 20;
                     int h = rand.nextInt(30) + 20;
             
                     if (ke.getKeyChar() == 'r') {
-                        figs.add(new Rect(xa,ya, w,h, cor[contorno],cor[fundo]));
+                        nextPaintIndex = -1;
+                        nextPaint = null;
+                        figs.add(new Rect(xa,ya, w,h, sel.get(3).corContorno,sel.get(3).corFundo));
                         focus = figs.get(figs.size()-1);
                     } 
                     else if (ke.getKeyChar() == 'e') {
-                        figs.add(new Ellipse(xa,ya, w,h, cor[contorno],cor[fundo]));
+                        nextPaintIndex = -1;
+                        nextPaint = null;
+                        figs.add(new Ellipse(xa,ya, w,h, sel.get(2).corContorno,sel.get(2).corFundo));
                         focus = figs.get(figs.size()-1);
                     } 
                     else if (ke.getKeyChar() == 'l') {
-                        figs.add(new Lozenge(xa,ya, w, h, cor[contorno],cor[fundo]));
+                        nextPaintIndex = -1;
+                        nextPaint = null;
+                        figs.add(new Lozenge(xa,ya, w, h, sel.get(1).corContorno,sel.get(1).corFundo));
                         focus = figs.get(figs.size()-1);
                     }
                     else if (ke.getKeyChar() == 's') {
-                        figs.add(new LineSegment(xa,ya, w,h, cor[fundo]));
+                        nextPaintIndex = -1;
+                        nextPaint = null;
+                        figs.add(new LineSegment(xa,ya, w,h, sel.get(0).corFundo));
                         focus = figs.get(figs.size()-1);
                     }
                     if (ke.getKeyChar() == 'f') {
@@ -189,28 +212,26 @@ class ListFrame extends JFrame {
                         changeOutline = true;
                         changeBackground = false;
                     }
-                    if ((ke.getKeyChar() == 127) || (ke.getKeyChar() == 'd')){
+                    if ((ke.getKeyChar() == 127) || (ke.getKeyChar() == 'd')) {
                         figs.remove(focus);
                         focus = null;
                     }
 
                     if (changeBackground) {
-                        int f = ke.getKeyChar() - '0';
-                        if (focus != null) {
+                        f = ke.getKeyChar() - '0';
+                        if ((focus != null) && (f >= 0 && f <= 9)) {
                             focus.changeBackgroundColor(cor[f]);
-                            sel.get(nextPaintIndex).changeBackgroundColor(cor[f]);
                         }
-                        else {
-                            sel.get(nextPaintIndex).changeBackgroundColor(cor[f]);
+                        if ((nextPaint != null) && (f >= 0 && f <= 9)){
+                            nextPaint.changeBackgroundColor(cor[f]);
                         }
                     }
-
                     else if (changeOutline) {
-                        int c = ke.getKeyChar() - '0';
-                        if (focus != null) {
+                        c = ke.getKeyChar() - '0';
+                        if ((focus != null) && (c >= 0 && c <= 9)) {
                             focus.changeOutlineColor(cor[c]);
                         }
-                        else if (nextPaint != null) {
+                        if ((nextPaint != null) && (c >= 0 && c <= 9)) {
                             nextPaint.changeOutlineColor(cor[c]);
                         }
                     }
@@ -225,7 +246,7 @@ class ListFrame extends JFrame {
         sel.add(new Lozenge(290,318, 30,30, cor[contorno],cor[fundo]));
         sel.add(new Ellipse(260,318, 30,30, cor[contorno], cor[fundo]));
         sel.add(new Rect(228,320, 30,26, cor[contorno], cor[fundo]));
-        repaint();
+        selIsNotInicialized = false;
     }
     public void paint(Graphics g) {
         super.paint(g);
@@ -236,7 +257,7 @@ class ListFrame extends JFrame {
             focus.drawBorder(g, Color.red);
             focus.drawRedim(g);
         }
-        if (call < 100){
+        if (selIsNotInicialized) {
             init_sel();
         }
         for (Figure s: this.sel) {
@@ -248,6 +269,5 @@ class ListFrame extends JFrame {
                s.drawBorder(g, Color.black);
             }   
         }
-        call+=1;
     }
 }
