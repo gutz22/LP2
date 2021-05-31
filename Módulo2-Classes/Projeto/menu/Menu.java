@@ -10,7 +10,8 @@ import java.awt.geom.GeneralPath;
 
 public class Menu {
 	private int x; int y;
-	public String op;
+	private String op;
+	private boolean centralizeOP = false;
 	private String font;
 	private boolean isPlain;
 	private int size;
@@ -28,6 +29,11 @@ public class Menu {
 		this.cor = cor;
 	}
 	
+	public void setOP(String newOP) {
+		this.op = newOP;
+		this.centralizeOP = true;
+	}
+
 	public void paint(Graphics g, boolean menuFocus) {
 		Font font;
 		Graphics2D g2d = (Graphics2D) g;
@@ -35,7 +41,7 @@ public class Menu {
 		g2d.setColor(this.cor);
 		g2d.setFont(font);
 		FontMetrics metrics = g.getFontMetrics(font);	
-		if ((this.x == 0) || (this.op == "Continuar")) {
+		if ((this.x == 0) || (centralizeOP)) {
 			this.x = (350 - metrics.stringWidth(this.op)) / 2;	
 		}
 		g2d.drawString(this.op, this.x, this.y+metrics.getAscent());
