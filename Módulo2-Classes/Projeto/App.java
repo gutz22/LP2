@@ -236,7 +236,7 @@ class ListFrame extends JFrame {
                         
                         if (ke.getKeyChar() == 'm') {
                             menuExited = false;
-                            options.get(1).op = "Continuar";
+                            options.get(1).setOP("Continuar");
                             displayMenu = true;
                             menuFocus = options.get(1);
                         }
