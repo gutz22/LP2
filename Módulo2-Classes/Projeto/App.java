@@ -1,17 +1,17 @@
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Color;
 import java.awt.event.*;
 import java.io.*;
-
 import javax.swing.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-import java.awt.*;
 
 import figures.*;
+import button.Button;
 import menu.Menu;
 
 class App {
@@ -23,7 +23,7 @@ class App {
 class ListFrame extends JFrame {
 
     private ArrayList<Figure> figs = new ArrayList<Figure>();
-    private ArrayList<Figure> sel = new ArrayList<Figure>();
+    private ArrayList<Button> sel = new ArrayList<Button>();
     private ArrayList<Menu> options = new ArrayList<Menu>();
     private ArrayList<Menu> instructions = new ArrayList<Menu>();
     private ArrayList<Menu> leave = new ArrayList<Menu>();
@@ -33,7 +33,7 @@ class ListFrame extends JFrame {
     private boolean menuExited = false;
     private Menu menuFocus = null;
     private Figure focus = null;
-    private Figure nextPaint = null;
+    private Button nextPaint = null;
     private int nextPaintIndex = -1;
     private Point pos = null;
     
@@ -67,7 +67,7 @@ class ListFrame extends JFrame {
             ObjectInputStream o = new ObjectInputStream(f);
             this.figs = (ArrayList<Figure>) o.readObject();
             this.selIsNotInicialized = o.readBoolean();
-            this.sel = (ArrayList<Figure>) o.readObject();
+            this.sel = (ArrayList<Button>) o.readObject();
             o.close();
         } catch (Exception x) {
             System.out.println("Iniciando pela primera vez!");
@@ -83,7 +83,7 @@ class ListFrame extends JFrame {
                         o.writeBoolean(selIsNotInicialized);
                         o.writeObject(sel);
                         o.flush();
-                        o.close();            
+                        o.close();          
                     } catch (Exception x) {
                         System.out.println("Erro na gravação do arquivo.");
                     }
@@ -115,13 +115,6 @@ class ListFrame extends JFrame {
                                 insideFocus = true;
                                 dx = focus.x - pos.x;
                                 dy = focus.y - pos.y;
-                                if (focus.redimClicked(pos.x, pos.y)) {
-                                    redimClick = true;
-                                    redimX = focus.x + focus.w - 7;
-                                    redimY = focus.y + focus.h - 7;
-                                    dxR = redimX - pos.x;
-                                    dyR = redimY - pos.y;
-                                }
                                 if (stop) {
                                     break;
                                 }
@@ -131,31 +124,47 @@ class ListFrame extends JFrame {
                             figs.remove(focus);
                             figs.add(focus);
                         }
-                        for (Figure s: sel) {
-                            if (s.clicked(pos.x, pos.y)) {
-                                nextPaintIndex = sel.indexOf(s);
-                                nextPaint = s;
-                                insideSel = true;
-                                insideFocus = false;
-                                break;
+                        if (focus != null) {
+                            if (focus.redimClicked(pos.x, pos.y)) {
+                                insideFocus = true;
+                                redimClick = true;
+                                redimX = focus.x + focus.w - 7;
+                                redimY = focus.y + focus.h - 7;
+                                dxR = redimX - pos.x;
+                                dyR = redimY - pos.y;
                             }
                         }
-                        if ((!insideFocus) && (nextPaint != null) && (!insideSel)) {
+                        for (Button s: sel) {
+                            if (s.clicked(pos.x, pos.y)) {
+                                if (nextPaint == s) {
+                                    insideFocus = true;
+                                    nextPaint = null;
+                                    nextPaintIndex = -1;
+                                    break;
+                                }
+                                else {
+                                    nextPaintIndex = sel.indexOf(s);
+                                    nextPaint = s;
+                                    insideSel = true;
+                                }
+                            }
+                        }
+                        if ((!insideFocus) && (nextPaint != null) && (!insideSel) && (isInFrame(pos.x,pos.y))) {
                             focus = null;
                             int w = rand.nextInt(30) + 20;
                             int h = rand.nextInt(30) + 20;
 
                             if (nextPaintIndex == 0) {
-                                figs.add(new LineSegment(pos.x,pos.y, w,h, nextPaint.corFundo));
+                                figs.add(new LineSegment(pos.x,pos.y, w,h, nextPaint.fig.corFundo));
                             }
                             else if (nextPaintIndex == 1) {
-                                figs.add(new Lozenge(pos.x,pos.y, w,h, nextPaint.corFundo,nextPaint.corContorno));
+                                figs.add(new Lozenge(pos.x,pos.y, w,h, nextPaint.fig.corFundo,nextPaint.fig.corContorno));
                             }
                             else if (nextPaintIndex == 2) {
-                                figs.add(new Ellipse(pos.x,pos.y, w,h, nextPaint.corFundo,nextPaint.corContorno));
+                                figs.add(new Ellipse(pos.x,pos.y, w,h, nextPaint.fig.corFundo,nextPaint.fig.corContorno));
                             }
                             else if (nextPaintIndex == 3) {
-                                figs.add(new Rect(pos.x,pos.y, w,h, nextPaint.corFundo,nextPaint.corContorno));
+                                figs.add(new Rect(pos.x,pos.y, w,h, nextPaint.fig.corFundo,nextPaint.fig.corContorno));
                             }
                             focus = figs.get(figs.size()-1);
                             insideFocus = true;
@@ -175,23 +184,39 @@ class ListFrame extends JFrame {
                     if (menuExited) {
                         pos = getMousePosition();
                         int stretchx; int stretchy;
-                        if (redimClick) {
+                        if ((redimClick) && (pos != null)) {
                             figs.remove(focus);
                             figs.add(focus);
                             stretchx = redimX - pos.x;
                             stretchy = redimY - pos.y;
                             focus.w += dxR - stretchx;
                             focus.h += dyR - stretchy;
+                            if (focus.w < 7) { focus.w = 7; }
+                            if (focus.h < 7) { focus.h = 7; }
+                            if (focus.x+focus.w > 349) { focus.x = 349-focus.w-2; }
+                            if (focus.y+focus.h > 349) { focus.y = 349-focus.h-2; }
                             dxR = stretchx;
                             dyR = stretchy;
                         }
                         else if (focus != null) {
+                            boolean collide = false;
                             redimClick = false;
                             figs.remove(focus);
                             figs.add(focus);
-                            focus.x = pos.x + dx;
-                            focus.y = pos.y + dy;
-                        }
+                            if (pos != null) {
+                                focus.x = pos.x + dx;
+                                focus.y = pos.y + dy;
+                            } 
+                            if ((focus.x < 1) || ((focus.y < 37) || (focus.x+focus.w > 349)) || (focus.y+focus.h > 349))  {
+                                collide = true;
+                            }
+                            if (collide) {
+                                if (focus.x < 1) {focus.x = 2;}
+                                if (focus.y < 37) {focus.y = 39;}
+                                if ((focus.x+focus.w) > 349) { focus.x = 349-focus.w-2; }
+                                if ((focus.y+focus.h) > 349) { focus.y = 349-focus.h-2; }
+                            }
+                       }
                         repaint();
                     }
                 }
@@ -211,25 +236,25 @@ class ListFrame extends JFrame {
                             if (ke.getKeyChar() == 'r') {
                                 nextPaintIndex = -1;
                                 nextPaint = null;
-                                figs.add(new Rect(xa,ya, w,h, sel.get(3).corFundo,sel.get(3).corContorno));
+                                figs.add(new Rect(xa,ya, w,h, sel.get(3).fig.corFundo,sel.get(3).fig.corContorno));
                                 focus = figs.get(figs.size()-1);
                             } 
                             else if (ke.getKeyChar() == 'e') {
                                 nextPaintIndex = -1;
                                 nextPaint = null;
-                                figs.add(new Ellipse(xa,ya, w,h, sel.get(2).corFundo,sel.get(2).corContorno));
+                                figs.add(new Ellipse(xa,ya, w,h, sel.get(2).fig.corFundo,sel.get(2).fig.corContorno));
                                 focus = figs.get(figs.size()-1);
                             } 
                             else if (ke.getKeyChar() == 'l') {
                                 nextPaintIndex = -1;
                                 nextPaint = null;
-                                figs.add(new Lozenge(xa,ya, w, h, sel.get(1).corFundo,sel.get(1).corContorno));
+                                figs.add(new Lozenge(xa,ya, w, h, sel.get(1).fig.corFundo,sel.get(1).fig.corContorno));
                                 focus = figs.get(figs.size()-1);
                             }
                             else if (ke.getKeyChar() == 's') {
                                 nextPaintIndex = -1;
                                 nextPaint = null;
-                                figs.add(new LineSegment(xa,ya, w,h, sel.get(0).corFundo));
+                                figs.add(new LineSegment(xa,ya, w,h, sel.get(0).fig.corFundo));
                                 focus = figs.get(figs.size()-1);
                             }
                         }
@@ -357,16 +382,21 @@ class ListFrame extends JFrame {
             }
         );
     }
+    private boolean isInFrame(int posX, int posY) {
+        return (posX >= 0 && posX <= 350 && posY >= 0 && posY <= 350);
+    }
+
+
     private void closeApp(){
         this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }
 
     private void initSel() {
         if (selIsNotInicialized) {
-            sel.add(new LineSegment(320,318, 30,30, cor[fundo]));
-            sel.add(new Lozenge(290,318, 30,30, cor[fundo],cor[contorno]));
-            sel.add(new Ellipse(260,318, 30,30, cor[fundo],cor[contorno]));
-            sel.add(new Rect(228,320, 30,26,  cor[fundo],cor[contorno]));
+            sel.add(new Button(new LineSegment(320,318, 30,30, cor[fundo])));
+            sel.add(new Button(new Lozenge(290,318, 30,30, cor[fundo],cor[contorno])));
+            sel.add(new Button(new Ellipse(260,318, 30,30, cor[fundo],cor[contorno])));
+            sel.add(new Button(new Rect(228,320, 30,26,  cor[fundo],cor[contorno])));
             selIsNotInicialized = false;
         }
         repaint();
@@ -425,7 +455,7 @@ class ListFrame extends JFrame {
         leave.add(new Menu(0, 180, "Não", font, true, 12, Color.black));
         repaint();
     }
-    
+
     public void paint(Graphics g) {
         super.paint(g);
         Graphics2D g2d = (Graphics2D) g;
@@ -434,10 +464,10 @@ class ListFrame extends JFrame {
 
         if (menuExited) {
             for (Figure fig: this.figs) {
-                fig.paint(g, fig == focus, true);
+                fig.paint(g, fig == focus);
             } 
-            for (Figure s: this.sel) {
-                s.paint(g, s == nextPaint, false);
+            for (Button s: this.sel) {
+                s.paint(g, s == nextPaint);
             }
         }
         else if (displayMenu) {
