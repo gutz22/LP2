@@ -11,16 +11,10 @@ public abstract class Figure implements IVisible, Serializable {
     public int w, h;
     public Color corContorno, corFundo;
     
-    public void paint(Graphics g, boolean focused, boolean isFigs) {
-      if (isFigs && focused) {
+    public void paint(Graphics g, boolean focused) {
+      if (focused) {
           this.drawBorder(g, Color.red);
           this.drawRedim(g);
-      }
-      else if ((!isFigs) && (focused)) {
-        this.drawBorder(g, Color.magenta);
-      }
-      else if (!isFigs) {
-        this.drawBorder(g, Color.black);
       }
     }
 
@@ -45,7 +39,7 @@ public abstract class Figure implements IVisible, Serializable {
       g2d.drawRect(this.x,this.y, this.w,this.h);
     }
 
-    public void drawRedim(Graphics g) {
+    private void drawRedim(Graphics g) {
       Color lightSalmon = new Color(255, 160, 122);
       Graphics2D g2d = (Graphics2D) g;
       g2d.setColor(lightSalmon);
@@ -53,9 +47,7 @@ public abstract class Figure implements IVisible, Serializable {
       g2d.fillRect(this.x+this.w-7+1,this.y+this.h-7+1, 7-1,7-1);
     }
 
-    public boolean clicked(int posX, int posY) {
-      return (((this.x <= posX) && (this.y <= posY)) && ((posX <= (this.x + this.w)) && (posY <= (this.y + this.h))));
-    }
+    public abstract boolean clicked(int posX, int posY);
 
     public boolean redimClicked(int posX, int posY) {
       return ((((this.x+this.w-7) <= posX) && ((this.y+this.h-7) <= posY)) && ((posX <= (this.x+this.w-7 + 7)) && (posY <= (this.y+this.h-7 + 7))));

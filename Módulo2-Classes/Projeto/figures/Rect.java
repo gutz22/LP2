@@ -15,13 +15,19 @@ public class Rect extends Figure {
         g2d.setColor(corBorda);
         g2d.drawRect(this.x-2,this.y-2, this.w+4,this.h+4);
       }
+
     @Override
-    public void paint(Graphics g, boolean focused, boolean isFigs) {
+    public boolean clicked(int posX, int posY) {
+        return (((this.x <= posX) && (this.y <= posY)) && ((posX <= (this.x + this.w)) && (posY <= (this.y + this.h))));
+    }
+
+    @Override
+    public void paint(Graphics g, boolean focused) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setColor(this.corContorno);
         g2d.drawRect(this.x,this.y, this.w,this.h);
         g2d.setColor(this.corFundo);
         g2d.fillRect(this.x+1,this.y+1, this.w-1,this.h-1);
-        super.paint(g, focused, isFigs);
+        super.paint(g, focused);
     }
 }
